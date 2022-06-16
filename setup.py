@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(
-    name='schelper',
+    name='scanalysis',
     version='0.1.0',
     packages=[''],
     package_dir={'': 'helper'},
