@@ -109,7 +109,7 @@ def analyze_pct(data: DataFrame, label_keys: list, group_keys, genes: list, anal
 
 
 def analyze_dge(adata: AnnData, label_keys: list, factors: list, versus: list, analyze_global: bool = True,
-                folder_name: str = 'dge'):
+                analyze_interaction: bool = True, folder_name: str = 'dge'):
     import os
     import shutil
 
@@ -157,4 +157,29 @@ def analyze_dge(adata: AnnData, label_keys: list, factors: list, versus: list, a
                         except:
                             print(
                                 f"Couldn't calculated DGE for {vs} among {label} of {label_key} in group {lev} of {factor}")
+
+
+                    if analyze_interaction:
+                        other_factors = [x for x in factors if x != factor]
+                        for other_factor in other_factors:
+                            for other_level in tempdata_level.obs[other_factor].unique():
+                                tempdata_level_interact = tempdata_level[tempdata_level.obs[other_factor] == other_level, :].copy()
+
+                                for vs in versus:
+                                    try:
+                                        sc.tl.rank_genes_groups(tempdata_level_interact, vs, method='wilcoxon', use_raw=False)
+                                        dge = sc.get.rank_genes_groups_df(tempdata_level_interact, 'positive',
+                                                                          pval_cutoff=0.05).sort_values('logfoldchanges',
+                                                                                                        ascending=False)
+
+                                        if dge.shape[0] < 2:
+                                            dge.to_excel(
+                                                f"{folder_name}/{label_key}={label}+{factor}={lev}+{other_factor}={other_level}-{vs.split('_', 1)[0]}+_vs_{vs.split('_', 1)[0]}-_NoGene.xlsx")
+                                        else:
+                                            dge.to_excel(
+                                                f"{folder_name}/{label_key}={label}+{factor}={lev}+{other_factor}={other_level}-{vs.split('_', 1)[0]}+_vs_{vs.split('_', 1)[0]}-.xlsx")
+                                    except:
+                                        print(
+                                            f"Couldn't calculated DGE for {vs} among {label} of {label_key} in group {lev} of {factor}")
+
     shutil.make_archive(folder_name, 'zip', folder_name)
