@@ -1,4 +1,5 @@
 import pandas as pd
+import scanpy as sc
 
 
 def _check_expression_mtx(adata):
@@ -89,5 +90,24 @@ def analyze_pct(df, groups, genes, threshold=0, folder_name='pct'):
                    gene=gen,
                    threshold=threshold
                    )
+
+    shutil.make_archive(folder_name, 'zip', folder_name)
+
+
+def analyze_dge(adata, factor, versus, folder_name='dge'):
+    bdata = adata.copy()
+    import os
+    import shutil
+
+    if not os.path.isdir(folder_name):
+        os.mkdir(folder_name)
+    for lev in factor:
+        adata = bdata.copy()
+        adata = adata[adata.obs[factor] == lev].copy()
+        for vs in versus:
+            sc.tl.rank_genes_groups(adata, vs, method='wilcoxon')
+            dge = sc.get.rank_genes_groups_df(adata, 'positive',
+                                              pval_cutoff=0.05).sort_values('logfoldchange', ascending=False)
+            dge.to_excel(f'{lev}-{vs}+_vs_{vs}-.xlsx')
 
     shutil.make_archive(folder_name, 'zip', folder_name)
