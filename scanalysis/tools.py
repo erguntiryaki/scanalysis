@@ -66,34 +66,41 @@ def contig(df, group1, group2, file_name='table.xlsx', gene='MS4A1', threshold=0
     return table
 
 
-def analyze_pct(df, groups, genes, threshold=0, folder_name='pct'):
+def analyze_pct(df, label_keys: list, group_keys, genes, analyze_global: bool=True, threshold=0, folder_name='pct'):
     from itertools import combinations
     import os
     import shutil
 
     if not os.path.isdir(folder_name):
         os.mkdir(folder_name)
+    bdf = df.copy()
+    for label_key in label_keys:
+        for label in df[label_key].unique():
+            df = bdf.copy()
+            for gene in genes:
+                if analyze_global:
+                    pct_table(df, label_key, file_name=f"{folder_name}/global-{label_key}-{gene}.xlsx")
 
-    # Calculate percentage positives for groupby in obs
-    for gen in genes:
-        for grp in groups:
-            pct_table(df=df,
-                      group=grp,
-                      file_name=f'{folder_name}/{grp}-{gen}.xlsx',
-                      gene=gen,
-                      threshold=threshold
-                      )
-    for gen in genes:
-        for g1, g2 in combinations(groups, 2):
-            contig(df=df,
-                   group1=g1,
-                   group2=g2,
-                   file_name=f'{folder_name}/{g1}+{g2}-{gen}.xlsx',
-                   gene=gen,
-                   threshold=threshold
-                   )
+                for group_key in group_keys:
+                    pct_table(df,
+                              group=group_key,
+                              file_name=f"{folder_name}/{label_key}-{group_key}-{gene}.xlsx",
+                              gene=gene,
+                              threshold=threshold
+                              )
+
+        for gene in genes:
+            for g1, g2 in combinations(group_keys, 2):
+                contig(df=df,
+                       group1=g1,
+                       group2=g2,
+                       file_name=f'{folder_name}/{g1}+{g2}-{gene}.xlsx',
+                       gene=gene,
+                       threshold=threshold
+                       )
 
     shutil.make_archive(folder_name, 'zip', folder_name)
+
 
 
 def analyze_dge(adata: AnnData, label_keys: list, factors: list, versus: list, analyze_global: bool = True,
@@ -148,3 +155,4 @@ def analyze_dge(adata: AnnData, label_keys: list, factors: list, versus: list, a
                         except:
                             print(f"Couldn't calculated DGE for {vs} among {label} of {label_key} in group {lev} of {factor}")
     shutil.make_archive(folder_name, 'zip', folder_name)
+print('Run Complete')
