@@ -87,13 +87,13 @@ def analyze_pct(df, label_keys: list, group_keys, genes: list, analyze_global: b
             df = bdf.copy()
             df = df[df[label_key] == label].copy()
 
-            for gene in genes:
+            for gen in genes:
 
                 for group_key in group_keys:
                     pct_table(df,
                               group=group_key,
-                              file_name=f"{folder_name}/{label_key}={label}--{group_key}-{gene}.xlsx",
-                              gene=gene,
+                              file_name=f"{folder_name}/{label_key}={label}--{group_key}-{gen}.xlsx",
+                              gene=gen,
                               threshold=threshold
                               )
 
