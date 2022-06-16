@@ -1,5 +1,6 @@
 import pandas as pd
 import scanpy as sc
+from anndata import AnnData
 
 
 def _check_expression_mtx(adata):
@@ -95,21 +96,33 @@ def analyze_pct(df, groups, genes, threshold=0, folder_name='pct'):
     shutil.make_archive(folder_name, 'zip', folder_name)
 
 
-def analyze_dge(adata, factors, versus, folder_name='dge'):
-    bdata = adata.copy()
+def analyze_dge(adata: AnnData, label_keys: list, factors: list, versus: list, analyze_global: bool = True,
+                folder_name: str = 'dge'):
     import os
     import shutil
 
     if not os.path.isdir(folder_name):
         os.mkdir(folder_name)
-    for factor in factors:
-        for lev in adata.obs[factor].unique():
+
+    bdata = adata.copy()
+    for label_key in label_keys:
+        for label in adata.obs[label_key].unique():
             adata = bdata.copy()
-            adata = adata[adata.obs[factor] == lev].copy()
-            for vs in versus:
-                sc.tl.rank_genes_groups(adata, vs, method='wilcoxon')
-                dge = sc.get.rank_genes_groups_df(adata, 'positive',
-                                                pval_cutoff=0.05).sort_values('logfoldchanges', ascending=False)
-                dge.to_excel(f'{folder_name}/{lev}-{vs}+_vs_{vs}-.xlsx')
+            adata = adata[adata.obs[label_key] == label].copy()
+
+            cdata = adata.copy()
+            for factor in factors:
+
+                for lev in adata.obs[factor].unique():
+                    adata = cdata.copy()
+                    adata = adata[adata.obs[factor] == lev].copy()
+
+                    for vs in versus:
+                        sc.tl.rank_genes_groups(adata, vs, method='wilcoxon')
+                        dge = sc.get.rank_genes_groups_df(adata, 'positive',
+                                                          pval_cutoff=0.05).sort_values('logfoldchanges',
+                                                                                        ascending=False)
+                        dge.to_excel(
+                            f"{folder_name}/{label_key}={label}+{factor}={lev}-{vs.split('_', 1)[0]}+_vs_{vs.split('_', 1)[0]}-.xlsx")
 
     shutil.make_archive(folder_name, 'zip', folder_name)
