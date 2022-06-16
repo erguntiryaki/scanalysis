@@ -3,7 +3,8 @@ import scanpy as sc
 
 
 def _check_expression_mtx(adata):
-    if any(adata.X < 0):
+    m = adata.X < 0
+    if m.size > 0:
         return False
 
 
