@@ -105,11 +105,11 @@ def analyze_dge(adata, factors, versus, folder_name='dge'):
     for factor in factors:
         for lev in adata.obs[factor].unique():
             adata = bdata.copy()
-        adata = adata[adata.obs[factor] == lev].copy()
-        for vs in versus:
-            sc.tl.rank_genes_groups(adata, vs, method='wilcoxon')
-            dge = sc.get.rank_genes_groups_df(adata, 'positive',
-                                              pval_cutoff=0.05).sort_values('logfoldchanges', ascending=False)
-            dge.to_excel(f'{folder_name}/{lev}-{vs}+_vs_{vs}-.xlsx')
+            adata = adata[adata.obs[factor] == lev].copy()
+            for vs in versus:
+                sc.tl.rank_genes_groups(adata, vs, method='wilcoxon')
+                dge = sc.get.rank_genes_groups_df(adata, 'positive',
+                                                pval_cutoff=0.05).sort_values('logfoldchanges', ascending=False)
+                dge.to_excel(f'{folder_name}/{lev}-{vs}+_vs_{vs}-.xlsx')
 
     shutil.make_archive(folder_name, 'zip', folder_name)
