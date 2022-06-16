@@ -56,6 +56,7 @@ def pct_table(df, group, file_name='table.xlsx', gene='MS4A1', threshold=0):
     table.to_excel(file_name)
     return table
 
+
 def contig(df: DataFrame, group1, group2, file_name='table.xlsx', gene='MS4A1', threshold=0):
     from collections import OrderedDict
     grp = OrderedDict({})
@@ -65,8 +66,9 @@ def contig(df: DataFrame, group1, group2, file_name='table.xlsx', gene='MS4A1', 
     table.to_excel(file_name)
 #    return table
 
+
 def analyze_pct(data: DataFrame, label_keys: list, group_keys, genes: list, analyze_global: bool = True, threshold=0,
-                folder_name: str ='pct'):
+                folder_name: str = 'pct'):
     from itertools import combinations
     import os
     import shutil
@@ -78,9 +80,9 @@ def analyze_pct(data: DataFrame, label_keys: list, group_keys, genes: list, anal
         if analyze_global:
             for gene in genes:
                 pct_table(data,
-                      group=label_key,
-                      gene=gene,
-                      file_name=f"{folder_name}/global-{label_key}-{gene}.xlsx")
+                          group=label_key,
+                          gene=gene,
+                          file_name=f"{folder_name}/global-{label_key}-{gene}.xlsx")
 
         for label in data[label_key].unique():
             dff = data[data[label_key] == label].copy()
@@ -93,6 +95,7 @@ def analyze_pct(data: DataFrame, label_keys: list, group_keys, genes: list, anal
                               gene=gen,
                               threshold=threshold
                               )
+
                 for g1, g2 in combinations(group_keys, 2):
                     contig(df=dff,
                            group1=g1,
@@ -114,16 +117,14 @@ def analyze_dge(adata: AnnData, label_keys: list, factors: list, versus: list, a
         os.mkdir(folder_name)
 
     # Iterate over labels
-    bdata = adata.copy()
     for label_key in label_keys:
         for label in adata.obs[label_key].unique():
-            adata = bdata.copy()
-            adata = adata[adata.obs[label_key] == label].copy()
+            tempdata_label = adata[adata.obs[label_key] == label].copy()
             if analyze_global:
                 for vs in versus:
                     try:
-                        sc.tl.rank_genes_groups(adata, vs, method='wilcoxon', use_raw=False)
-                        dge = sc.get.rank_genes_groups_df(adata, 'positive', pval_cutoff=0.05).sort_values(
+                        sc.tl.rank_genes_groups(tempdata_label, vs, method='wilcoxon', use_raw=False)
+                        dge = sc.get.rank_genes_groups_df(tempdata_label, 'positive', pval_cutoff=0.05).sort_values(
                             'logfoldchanges',
                             ascending=False)
                         if dge.shape[0] < 2:
@@ -135,17 +136,15 @@ def analyze_dge(adata: AnnData, label_keys: list, factors: list, versus: list, a
 
                     except:
                         print(f"Couldn't calculated global DGE for {vs}.")
-            cdata = adata.copy()
-            for factor in factors:
 
+            for factor in factors:
                 for lev in adata.obs[factor].unique():
-                    adata = cdata.copy()
-                    adata = adata[adata.obs[factor] == lev].copy()
+                    tempdata_level = tempdata_label[tempdata_label.obs[factor] == lev].copy()
 
                     for vs in versus:
                         try:
-                            sc.tl.rank_genes_groups(adata, vs, method='wilcoxon', use_raw=False)
-                            dge = sc.get.rank_genes_groups_df(adata, 'positive',
+                            sc.tl.rank_genes_groups(tempdata_level, vs, method='wilcoxon', use_raw=False)
+                            dge = sc.get.rank_genes_groups_df(tempdata_level, 'positive',
                                                               pval_cutoff=0.05).sort_values('logfoldchanges',
                                                                                             ascending=False)
 
