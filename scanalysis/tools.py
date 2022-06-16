@@ -132,7 +132,7 @@ def analyze_dge(adata: AnnData, label_keys: list, factors: list, versus: list, a
                                 f"{folder_name}/global-{label_key}={label}-{vs.split('_', 1)[0]}+_vs_{vs.split('_', 1)[0]}-NoGene.xlsx")
                         else:
                             dge.to_excel(
-                                f"{folder_name}/global-{label_key}={label}-{vs.split('_', 1)[0]}+_vs_{vs.split('_', 1)[0]}-NoGene.xlsx")
+                                f"{folder_name}/global-{label_key}={label}-{vs.split('_', 1)[0]}+_vs_{vs.split('_', 1)[0]}-.xlsx")
 
                     except:
                         print(f"Couldn't calculated global DGE for {vs}.")
