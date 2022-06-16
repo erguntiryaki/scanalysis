@@ -116,7 +116,13 @@ def analyze_dge(adata: AnnData, label_keys: list, factors: list, versus: list, a
                         sc.tl.rank_genes_groups(adata, vs, method='wilcoxon', use_raw=False)
                         dge = sc.get.rank_genes_groups_df(adata, 'positive', pval_cutoff=0.05).sort_values('logfoldchanges',
                                                                                                            ascending=False)
-                        dge.to_excel(f"{folder_name}/global-{label_key}={label}-{vs.split('_', 1)[0]}+_vs_{vs.split('_', 1)[0]}-.xlsx")
+                        if dge.shape[0] < 2:
+                            dge.to_excel(
+                                f"{folder_name}/global-{label_key}={label}-{vs.split('_', 1)[0]}+_vs_{vs.split('_', 1)[0]}-NoGene.xlsx")
+                        else:
+                            dge.to_excel(
+                                f"{folder_name}/global-{label_key}={label}-{vs.split('_', 1)[0]}+_vs_{vs.split('_', 1)[0]}-NoGene.xlsx")
+
                     except:
                         print(f"Couldn't calculated global DGE for {vs}.")
             cdata = adata.copy()
@@ -131,8 +137,13 @@ def analyze_dge(adata: AnnData, label_keys: list, factors: list, versus: list, a
                             sc.tl.rank_genes_groups(adata, vs, method='wilcoxon', use_raw=False)
                             dge = sc.get.rank_genes_groups_df(adata, 'positive',
                                                               pval_cutoff=0.05).sort_values('logfoldchanges',
-                                                                                            ascending=False)
-                            dge.to_excel(
+                                                                                           ascending=False)
+
+                            if dge.shape[0] < 2:
+                                dge.to_excel(
+                                f"{folder_name}/{label_key}={label}+{factor}={lev}-{vs.split('_', 1)[0]}+_vs_{vs.split('_', 1)[0]}-_NoGene.xlsx")
+                            else:
+                                dge.to_excel(
                                 f"{folder_name}/{label_key}={label}+{factor}={lev}-{vs.split('_', 1)[0]}+_vs_{vs.split('_', 1)[0]}-.xlsx")
                         except:
                             print(f"Couldn't calculated DGE for {vs} among {label} of {label_key} in group {lev} of {factor}")
