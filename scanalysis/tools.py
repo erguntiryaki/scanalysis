@@ -66,19 +66,22 @@ def contig(df, group1, group2, file_name='table.xlsx', gene='MS4A1', threshold=0
     return table
 
 
-def analyze_pct(df, label_keys: list, group_keys, genes, analyze_global: bool=True, threshold=0, folder_name='pct'):
+def analyze_pct(df, label_keys: list, group_keys, genes: list, analyze_global: bool=True, threshold=0, folder_name='pct'):
     from itertools import combinations
     import os
     import shutil
 
     if not os.path.isdir(folder_name):
         os.mkdir(folder_name)
+
     bdf = df.copy()
     for label_key in label_keys:
-        if analyze_global:
-            pct_table(df,
-                      group=label_key,
-                      file_name=f"{folder_name}/global-{label_key}-{gene}.xlsx")
+        for gene in genes:
+            if analyze_global:
+                pct_table(df,
+                          group=label_key,
+                          gene=gene,
+                          file_name=f"{folder_name}/global-{label_key}-{gene}.xlsx")
 
         for label in df[label_key].unique():
             df = bdf.copy()
