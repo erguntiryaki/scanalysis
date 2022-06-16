@@ -104,11 +104,18 @@ def analyze_dge(adata: AnnData, label_keys: list, factors: list, versus: list, a
     if not os.path.isdir(folder_name):
         os.mkdir(folder_name)
 
+# Iterate over labels
     bdata = adata.copy()
     for label_key in label_keys:
         for label in adata.obs[label_key].unique():
             adata = bdata.copy()
             adata = adata[adata.obs[label_key] == label].copy()
+            if analyze_global:
+                for vs in versus:
+                    sc.tl.rank_genes_groups(adata, vs, method='wilcoxon')
+                    dge = sc.get.rank_genes_groups_df(adata, 'positive', pval_cutoff=0.05).sort_values('logfoldchanges',
+                                                                                                       ascending=False)
+                    dge.to_excel(f"global-{label_key}={label}-{vs.split('_', 1)[0]}+_vs_{vs.split('_', 1)[0]}-.xlsx")
 
             cdata = adata.copy()
             for factor in factors:
