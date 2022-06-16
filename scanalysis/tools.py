@@ -95,15 +95,16 @@ def analyze_pct(df, groups, genes, threshold=0, folder_name='pct'):
     shutil.make_archive(folder_name, 'zip', folder_name)
 
 
-def analyze_dge(adata, factor, versus, folder_name='dge'):
+def analyze_dge(adata, factors, versus, folder_name='dge'):
     bdata = adata.copy()
     import os
     import shutil
 
     if not os.path.isdir(folder_name):
         os.mkdir(folder_name)
-    for lev in factor:
-        adata = bdata.copy()
+    for factor in factors:
+        for lev in adata.obs[factor].unique():
+            adata = bdata.copy()
         adata = adata[adata.obs[factor] == lev].copy()
         for vs in versus:
             sc.tl.rank_genes_groups(adata, vs, method='wilcoxon')
