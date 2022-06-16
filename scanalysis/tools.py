@@ -75,15 +75,16 @@ def analyze_pct(df, label_keys: list, group_keys, genes, analyze_global: bool=Tr
         os.mkdir(folder_name)
     bdf = df.copy()
     for label_key in label_keys:
+        if analyze_global:
+            pct_table(df,
+                      group=label_key,
+                      file_name=f"{folder_name}/global-{label_key}-{gene}.xlsx")
+
         for label in df[label_key].unique():
             df = bdf.copy()
             df = df[df[label_key] == label].copy()
 
             for gene in genes:
-                if analyze_global:
-                    pct_table(df,
-                              group=label_key,
-                              file_name=f"{folder_name}/global-{label_key}-{gene}.xlsx")
 
                 for group_key in group_keys:
                     pct_table(df,
@@ -98,7 +99,7 @@ def analyze_pct(df, label_keys: list, group_keys, genes, analyze_global: bool=Tr
                     contig(df=df,
                            group1=g1,
                            group2=g2,
-                           file_name=f'{folder_name}/{label_key}={label}--{group_key}={g1}+{g2}-{gene}.xlsx',
+                           file_name=f'{folder_name}/{label_key}={label}--{g1}+{g2}-{gene}.xlsx',
                            gene=gene,
                            threshold=threshold
                            )
