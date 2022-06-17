@@ -127,7 +127,7 @@ def analyze_pct(data: DataFrame, label_keys: list = ('Broad', 'Detailed'),
     shutil.make_archive(folder_name, 'zip', folder_name)
 
 
-@jit(nopython=True)
+@jit()
 def comparison(anndat, compare, folder_name, label_key,
                label, factor_key, lev):
 
@@ -150,7 +150,7 @@ def comparison(anndat, compare, folder_name, label_key,
             "Couldn't calculated DGE for {} in the group {}--{}={}".format(vs, label, factor_key, lev))
 
 
-@jit(nopython=True)
+@jit()
 def comparison2(anndat, compare, folder_name, label_key,
                label, factor_key, lev, other_factor, other_level):
 
@@ -177,7 +177,7 @@ def comparison2(anndat, compare, folder_name, label_key,
                                                                                     other_factor, other_level))
 
 
-@jit(nopython=True)
+@jit()
 def analyze_dge(adata: AnnData, label_keys: list = ('BroadCellType', 'DetailedCellType'),
                 factor_keys: list = ('Diagnosis', 'Compartment'),
                 compare: list = ('GZMK_status', 'GZMB_status'),
