@@ -6,6 +6,7 @@ from itertools import combinations
 from collections import OrderedDict
 import os
 import shutil
+from numba import jit
 
 
 def _check_expression_mtx(adata):
@@ -125,7 +126,48 @@ def analyze_pct(data: DataFrame, label_keys: list = ('Broad', 'Detailed'),
 
     shutil.make_archive(folder_name, 'zip', folder_name)
 
+@jit()
+def comparison(anndat, compare, folder_name, label_key,
+               label, factor_key, lev):
 
+    for vs in compare:
+        try:
+            sc.tl.rank_genes_groups(anndat, vs, method='wilcoxon', use_raw=False)
+            dge = sc.get.rank_genes_groups_df(anndat, 'positive',
+                                              pval_cutoff=0.05).sort_values('logfoldchanges',
+                                                                            ascending=False)
+            if dge.shape[0] < 2:
+                dge.to_excel(
+                f"{folder_name}/{label_key}={label}+{factor_key}={lev}-{vs.split('_', 1)[0]}+_vs_{vs.split('_', 1)[0]}-_NoGene.xlsx")
+            else:
+                dge.to_excel(
+                f"{folder_name}/{label_key}={label}+{factor_key}={lev}-{vs.split('_', 1)[0]}+_vs_{vs.split('_', 1)[0]}-.xlsx")
+        except:
+            print(
+            f"Couldn't calculated DGE for {vs} in the group {label}--{factor_key}={lev}")
+
+@jit()
+def comparison2(anndat, compare, folder_name, label_key,
+               label, factor_key, lev, other_factor, other_level):
+
+    for vs in compare:
+        try:
+            sc.tl.rank_genes_groups(anndat, vs, method='wilcoxon', use_raw=False)
+            dge = sc.get.rank_genes_groups_df(anndat, 'positive',
+                                              pval_cutoff=0.05).sort_values('logfoldchanges',
+                                                                            ascending=False)
+            if dge.shape[0] < 2:
+                dge.to_excel(
+                f"{folder_name}/{label_key}={label}+{factor_key}={lev}+{other_factor}={other_level}-{vs.split('_', 1)[0]}+_vs_{vs.split('_', 1)[0]}-_NoGene.xlsx")
+            else:
+                dge.to_excel(
+                f"{folder_name}/{label_key}={label}+{factor_key}={lev}+{other_factor}={other_level}-{vs.split('_', 1)[0]}+_vs_{vs.split('_', 1)[0]}-.xlsx")
+        except:
+            print(
+            f"Couldn't calculated DGE for {vs} in the group : {label}--{factor_key}={lev}--{other_factor}={other_level}")
+
+
+@jit()
 def analyze_dge(adata: AnnData, label_keys: list = ('BroadCellType', 'DetailedCellType'),
                 factor_keys: list = ('Diagnosis', 'Compartment'),
                 compare: list = ('GZMK_status', 'GZMB_status'),
@@ -148,10 +190,10 @@ def analyze_dge(adata: AnnData, label_keys: list = ('BroadCellType', 'DetailedCe
                             ascending=False)
                         if dge.shape[0] < 2:
                             dge.to_excel(
-f"{folder_name}/global-{label_key}={label}-{vs.split('_', 1)[0]}+_vs_{vs.split('_', 1)[0]}-NoGene.xlsx")
+                            f"{folder_name}/global-{label_key}={label}-{vs.split('_', 1)[0]}+_vs_{vs.split('_', 1)[0]}-NoGene.xlsx")
                         else:
                             dge.to_excel(
-f"{folder_name}/global-{label_key}={label}-{vs.split('_', 1)[0]}+_vs_{vs.split('_', 1)[0]}-.xlsx")
+                            f"{folder_name}/global-{label_key}={label}-{vs.split('_', 1)[0]}+_vs_{vs.split('_', 1)[0]}-.xlsx")
 
                     except:
                         print(f"Couldn't calculated global DGE for {vs} in {label}.")
@@ -160,22 +202,8 @@ f"{folder_name}/global-{label_key}={label}-{vs.split('_', 1)[0]}+_vs_{vs.split('
                 for lev in adata.obs[factor_key].unique():
                     tempdata_level = tempdata_label[tempdata_label.obs[factor_key] == lev].copy()
 
-                    for vs in compare:
-                        try:
-                            sc.tl.rank_genes_groups(tempdata_level, vs, method='wilcoxon', use_raw=False)
-                            dge = sc.get.rank_genes_groups_df(tempdata_level, 'positive',
-                                                              pval_cutoff=0.05).sort_values('logfoldchanges',
-                                                                                            ascending=False)
-
-                            if dge.shape[0] < 2:
-                                dge.to_excel(
-f"{folder_name}/{label_key}={label}+{factor_key}={lev}-{vs.split('_', 1)[0]}+_vs_{vs.split('_', 1)[0]}-_NoGene.xlsx")
-                            else:
-                                dge.to_excel(
-f"{folder_name}/{label_key}={label}+{factor_key}={lev}-{vs.split('_', 1)[0]}+_vs_{vs.split('_', 1)[0]}-.xlsx")
-                        except:
-                            print(
-f"Couldn't calculated DGE for {vs} in the group {label}--{factor_key}={lev}")
+                    comparison(anndat=tempdata_level, compare=compare, folder_name=folder_name, label_key=label_key,
+                                   label=label, factor_key=factor_key, lev=lev)
 
 
                     if len(factor_keys)>1 and  analyze_interaction:
@@ -184,21 +212,8 @@ f"Couldn't calculated DGE for {vs} in the group {label}--{factor_key}={lev}")
                             for other_level in tempdata_level.obs[other_factor].unique():
                                 tempdata_level_interact = tempdata_level[tempdata_level.obs[other_factor] == other_level, :].copy()
 
-                                for vs in compare:
-                                    try:
-                                        sc.tl.rank_genes_groups(tempdata_level_interact, vs, method='wilcoxon', use_raw=False)
-                                        dge = sc.get.rank_genes_groups_df(tempdata_level_interact, 'positive',
-                                                                          pval_cutoff=0.05).sort_values('logfoldchanges',
-                                                                                                        ascending=False)
-
-                                        if dge.shape[0] < 2:
-                                            dge.to_excel(
-f"{folder_name}/{label_key}={label}+{factor_key}={lev}+{other_factor}={other_level}-{vs.split('_', 1)[0]}+_vs_{vs.split('_', 1)[0]}-_NoGene.xlsx")
-                                        else:
-                                            dge.to_excel(
-f"{folder_name}/{label_key}={label}+{factor_key}={lev}+{other_factor}={other_level}-{vs.split('_', 1)[0]}+_vs_{vs.split('_', 1)[0]}-.xlsx")
-                                    except:
-                                        print(
-f"Couldn't calculated DGE for {vs} in the group : {label}--{factor_key}={lev}--{other_factor}={other_level}")
+                                comparison2(anndat= tempdata_level_interact, compare=compare, folder_name=folder_name,
+                                            label_key=label_key, label=label, factor_key=factor_key, lev=lev,
+                                            other_factor=other_factor, other_level=other_level)
 
     shutil.make_archive(folder_name, 'zip', folder_name)
