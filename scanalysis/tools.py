@@ -105,9 +105,9 @@ def analyze_pct(data: DataFrame, label_keys: list = ('Broad', 'Detailed'),
                        threshold=threshold)
 
             if len(factor_keys) > 1:
-                os.mkdir(f'{folder_name}/detailed/')
+                _check_folder(f'{folder_name}/detailed/')
                 for lbs in label_keys:
-                    os.mkdir(f'{folder_name}/detailed/{lbs}')
+                    _check_folder(f'{folder_name}/detailed/{lbs}')
 
                 for factor1, factor2 in combinations(factor_keys, 2):
 
