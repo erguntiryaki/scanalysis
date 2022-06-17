@@ -2,7 +2,10 @@ import pandas as pd
 import scanpy as sc
 from anndata import AnnData
 from pandas import DataFrame
-from numba import jit
+from itertools import combinations
+from collections import OrderedDict
+import os
+import shutil
 
 
 def _check_expression_mtx(adata):
@@ -11,15 +14,11 @@ def _check_expression_mtx(adata):
         return False
 
 
-@jit(forceobj=True)
-def _annot(x):
-    if x > 0:
-        return 'positive'
-    else:
-        return 'negative'
+def _check_folder(folder_name):
+    if not os.path.isdir(folder_name):
+        os.mkdir(folder_name)
 
 
-@jit(forceobj=True)
 def get_annotated(adata, genes):
     if _check_expression_mtx(adata):
         print('Expression matrix seems to be Z transformed!!!')
@@ -33,11 +32,11 @@ def get_annotated(adata, genes):
         # Annotate Positivity
         for gene in genes:
             if gene == 'MS4A1':
-                df['CD20_status'] = df.MS4A1.apply(_annot)
+                df['CD20_status'] = df.MS4A1.apply(lambda x: 'positive' if x > 0 else 'negative')
 
             else:
                 gname = f'{gene}_status'
-                df[gname] = df[gene].apply(_annot)
+                df[gname] = df[gene].apply(lambda x: 'positive' if x > 0 else 'negative')
 
         # Add annotation to adata
         for gene in genes:
@@ -51,9 +50,8 @@ def get_annotated(adata, genes):
         return df, adata
 
 
-@jit(forceobj=True)
 def pct_table(df, group, file_name='table.xlsx', gene='MS4A1', threshold=0):
-    from collections import OrderedDict
+
     vals = OrderedDict({})
     for cell in df[group].value_counts().sort_index().index:
         allcells = df[df[group] == cell].shape[0]
@@ -68,9 +66,8 @@ def pct_table(df, group, file_name='table.xlsx', gene='MS4A1', threshold=0):
     return table
 
 
-@jit(forceobj=True)
 def contig(df: DataFrame, group1, group2, file_name='table.xlsx', gene='MS4A1', threshold=0):
-    from collections import OrderedDict
+
     grp = OrderedDict({})
     for i in df[group1].value_counts().sort_index().index:
         grp[i] = pct_table(df[df[group1] == i], group2, file_name=file_name, gene=gene, threshold=threshold)
@@ -79,63 +76,71 @@ def contig(df: DataFrame, group1, group2, file_name='table.xlsx', gene='MS4A1', 
     return table
 
 
-@jit(forceobj=True)
-def analyze_pct(data: DataFrame, label_keys: list, group_keys, genes: list, analyze_global: bool = True, threshold=0,
-                folder_name: str = 'pct'):
-    from itertools import combinations
-    import os
-    import shutil
+def analyze_pct(data: DataFrame, label_keys: list = ('Broad', 'Detailed'),
+                factor_keys: list = ('Diagnosis', 'Compartment'),
+                genes: list = ('GZMK', 'GZMB'), analyze_global: bool = True,
+                threshold=0, folder_name: str = 'pct'):
 
-    if not os.path.isdir(folder_name):
-        os.mkdir(folder_name)
+    _check_folder(folder_name)
 
     for label_key in label_keys:
+
         if analyze_global:
-            for gene in genes:
+            for gen in genes:
                 pct_table(data,
                           group=label_key,
-                          gene=gene,
-                          file_name=f"{folder_name}/global-{label_key}-{gene}.xlsx")
+                          gene=gen,
+                          file_name=f"{folder_name}/global-{label_key}-{gen}.xlsx")
+        else:
+            pass
 
-        for label in data[label_key].unique():
-            dff = data[data[label_key] == label].copy()
+        dff = data.copy()
+        for gen in genes:
+            for factor_key in factor_keys:
+                contig(df=dff,
+                       group1=label_key,
+                       group2=factor_key,
+                       file_name=f'{folder_name}/contingency--{label_key}+{factor_key}-{gen}.xlsx',
+                       gene=gen,
+                       threshold=threshold)
 
-            for gen in genes:
-                for group_key in group_keys:
-                    pct_table(dff,
-                              group=group_key,
-                              file_name=f"{folder_name}/{label_key}={label}--{group_key}-{gen}.xlsx",
-                              gene=gen,
-                              threshold=threshold
-                              )
+            if len(factor_keys) > 1:
+                _check_folder(f'{folder_name}/detailed/')
+                for lbs in label_keys:
+                    _check_folder(f'{folder_name}/detailed/{lbs}')
 
-                for g1, g2 in combinations(group_keys, 2):
-                    contig(df=dff,
-                           group1=g1,
-                           group2=g2,
-                           file_name=f'{folder_name}/{label_key}={label}--{g1}+{g2}-{gen}.xlsx',
-                           gene=gen,
-                           threshold=threshold
-                           )
+                for factor1, factor2 in combinations(factor_keys, 2):
+
+                    for label_level in dff[label_key].unique():
+
+                        celldf = dff.copy()
+                        celldf = celldf[celldf[label_key] == label_level].copy()
+                        contig(df=celldf,
+                               group1=factor1,
+                               group2=factor2,
+                               file_name=f'{folder_name}/detailed/{label_key}/{label_key}--{factor1}+{factor2}-{gen}.xlsx',
+                               gene=gen,
+                               threshold=threshold
+                               )
 
     shutil.make_archive(folder_name, 'zip', folder_name)
 
 
-@jit(forceobj=True)
-def analyze_dge(adata: AnnData, label_keys: list, factors: list, versus: list, analyze_global: bool = True,
+def analyze_dge(adata: AnnData, label_keys: list = ('BroadCellType', 'DetailedCellType'),
+                factor_keys: list = ('Diagnosis', 'Compartment'),
+                compare: list = ('GZMK_status', 'GZMB_status'),
+                analyze_global: bool = True,
                 analyze_interaction: bool = True, folder_name: str = 'dge'):
-    import os
-    import shutil
 
-    if not os.path.isdir(folder_name):
-        os.mkdir(folder_name)
+    _check_folder(folder_name)
 
     # Iterate over labels
     for label_key in label_keys:
         for label in adata.obs[label_key].unique():
             tempdata_label = adata[adata.obs[label_key] == label].copy()
+
             if analyze_global:
-                for vs in versus:
+                for vs in compare:
                     try:
                         sc.tl.rank_genes_groups(tempdata_label, vs, method='wilcoxon', use_raw=False)
                         dge = sc.get.rank_genes_groups_df(tempdata_label, 'positive', pval_cutoff=0.05).sort_values(
@@ -143,19 +148,19 @@ def analyze_dge(adata: AnnData, label_keys: list, factors: list, versus: list, a
                             ascending=False)
                         if dge.shape[0] < 2:
                             dge.to_excel(
-                                f"{folder_name}/global-{label_key}={label}-{vs.split('_', 1)[0]}+_vs_{vs.split('_', 1)[0]}-NoGene.xlsx")
+                            f"{folder_name}/global-{label_key}={label}-{vs.split('_', 1)[0]}+_vs_{vs.split('_', 1)[0]}-NoGene.xlsx")
                         else:
                             dge.to_excel(
-                                f"{folder_name}/global-{label_key}={label}-{vs.split('_', 1)[0]}+_vs_{vs.split('_', 1)[0]}-.xlsx")
+                        f"{folder_name}/global-{label_key}={label}-{vs.split('_', 1)[0]}+_vs_{vs.split('_', 1)[0]}-.xlsx")
 
                     except:
-                        print(f"Couldn't calculated global DGE for {vs}.")
+                        print(f"Couldn't calculated global DGE for {vs} in {label}.")
 
-            for factor in factors:
-                for lev in adata.obs[factor].unique():
-                    tempdata_level = tempdata_label[tempdata_label.obs[factor] == lev].copy()
+            for factor_key in factor_keys:
+                for lev in adata.obs[factor_key].unique():
+                    tempdata_level = tempdata_label[tempdata_label.obs[factor_key] == lev].copy()
 
-                    for vs in versus:
+                    for vs in compare:
                         try:
                             sc.tl.rank_genes_groups(tempdata_level, vs, method='wilcoxon', use_raw=False)
                             dge = sc.get.rank_genes_groups_df(tempdata_level, 'positive',
@@ -164,22 +169,22 @@ def analyze_dge(adata: AnnData, label_keys: list, factors: list, versus: list, a
 
                             if dge.shape[0] < 2:
                                 dge.to_excel(
-                                    f"{folder_name}/{label_key}={label}+{factor}={lev}-{vs.split('_', 1)[0]}+_vs_{vs.split('_', 1)[0]}-_NoGene.xlsx")
+                                f"{folder_name}/{label_key}={label}+{factor_key}={lev}-{vs.split('_', 1)[0]}+_vs_{vs.split('_', 1)[0]}-_NoGene.xlsx")
                             else:
                                 dge.to_excel(
-                                    f"{folder_name}/{label_key}={label}+{factor}={lev}-{vs.split('_', 1)[0]}+_vs_{vs.split('_', 1)[0]}-.xlsx")
+                                f"{folder_name}/{label_key}={label}+{factor_key}={lev}-{vs.split('_', 1)[0]}+_vs_{vs.split('_', 1)[0]}-.xlsx")
                         except:
                             print(
-                                f"Couldn't calculated DGE for {vs} among {label} of {label_key} in group {lev} of {factor}")
+                            f"Couldn't calculated DGE for {vs} in the group {label}--{factor_key}={lev}")
 
 
-                    if analyze_interaction:
-                        other_factors = [x for x in factors if x != factor]
+                    if len(factor_keys)>1 and  analyze_interaction:
+                        other_factors = [x for x in factor_keys if x != factor_key]
                         for other_factor in other_factors:
                             for other_level in tempdata_level.obs[other_factor].unique():
                                 tempdata_level_interact = tempdata_level[tempdata_level.obs[other_factor] == other_level, :].copy()
 
-                                for vs in versus:
+                                for vs in compare:
                                     try:
                                         sc.tl.rank_genes_groups(tempdata_level_interact, vs, method='wilcoxon', use_raw=False)
                                         dge = sc.get.rank_genes_groups_df(tempdata_level_interact, 'positive',
@@ -188,12 +193,12 @@ def analyze_dge(adata: AnnData, label_keys: list, factors: list, versus: list, a
 
                                         if dge.shape[0] < 2:
                                             dge.to_excel(
-                                                f"{folder_name}/{label_key}={label}+{factor}={lev}+{other_factor}={other_level}-{vs.split('_', 1)[0]}+_vs_{vs.split('_', 1)[0]}-_NoGene.xlsx")
+                                            f"{folder_name}/{label_key}={label}+{factor_key}={lev}+{other_factor}={other_level}-{vs.split('_', 1)[0]}+_vs_{vs.split('_', 1)[0]}-_NoGene.xlsx")
                                         else:
                                             dge.to_excel(
-                                                f"{folder_name}/{label_key}={label}+{factor}={lev}+{other_factor}={other_level}-{vs.split('_', 1)[0]}+_vs_{vs.split('_', 1)[0]}-.xlsx")
+                                            f"{folder_name}/{label_key}={label}+{factor_key}={lev}+{other_factor}={other_level}-{vs.split('_', 1)[0]}+_vs_{vs.split('_', 1)[0]}-.xlsx")
                                     except:
                                         print(
-                                            f"Couldn't calculated DGE for {vs} among {label} of {label_key} in group {lev} of {factor}")
+                                        f"Couldn't calculated DGE for {vs} in the group : {label}--{factor_key}={lev}--{other_factor}={other_level}")
 
     shutil.make_archive(folder_name, 'zip', folder_name)
