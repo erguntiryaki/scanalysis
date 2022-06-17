@@ -148,10 +148,10 @@ def analyze_dge(adata: AnnData, label_keys: list = ('BroadCellType', 'DetailedCe
                             ascending=False)
                         if dge.shape[0] < 2:
                             dge.to_excel(
-f"{folder_name}/global-{label_key}={label}-{vs.split('_', 1)[0]}+_vs_{vs.split('_', 1)[0]}-NoGene.xlsx")
+                            f"{folder_name}/global-{label_key}={label}-{vs.split('_', 1)[0]}+_vs_{vs.split('_', 1)[0]}-NoGene.xlsx")
                         else:
                             dge.to_excel(
-f"{folder_name}/global-{label_key}={label}-{vs.split('_', 1)[0]}+_vs_{vs.split('_', 1)[0]}-.xlsx")
+                        f"{folder_name}/global-{label_key}={label}-{vs.split('_', 1)[0]}+_vs_{vs.split('_', 1)[0]}-.xlsx")
 
                     except:
                         print(f"Couldn't calculated global DGE for {vs} in {label}.")
@@ -169,13 +169,13 @@ f"{folder_name}/global-{label_key}={label}-{vs.split('_', 1)[0]}+_vs_{vs.split('
 
                             if dge.shape[0] < 2:
                                 dge.to_excel(
-f"{folder_name}/{label_key}={label}+{factor_key}={lev}-{vs.split('_', 1)[0]}+_vs_{vs.split('_', 1)[0]}-_NoGene.xlsx")
+                                f"{folder_name}/{label_key}={label}+{factor_key}={lev}-{vs.split('_', 1)[0]}+_vs_{vs.split('_', 1)[0]}-_NoGene.xlsx")
                             else:
                                 dge.to_excel(
-f"{folder_name}/{label_key}={label}+{factor_key}={lev}-{vs.split('_', 1)[0]}+_vs_{vs.split('_', 1)[0]}-.xlsx")
+                                f"{folder_name}/{label_key}={label}+{factor_key}={lev}-{vs.split('_', 1)[0]}+_vs_{vs.split('_', 1)[0]}-.xlsx")
                         except:
                             print(
-f"Couldn't calculated DGE for {vs} in the group {label}--{factor_key}={lev}")
+                            f"Couldn't calculated DGE for {vs} in the group {label}--{factor_key}={lev}")
 
 
                     if len(factor_keys)>1 and  analyze_interaction:
@@ -193,12 +193,12 @@ f"Couldn't calculated DGE for {vs} in the group {label}--{factor_key}={lev}")
 
                                         if dge.shape[0] < 2:
                                             dge.to_excel(
-f"{folder_name}/{label_key}={label}+{factor_key}={lev}+{other_factor}={other_level}-{vs.split('_', 1)[0]}+_vs_{vs.split('_', 1)[0]}-_NoGene.xlsx")
+                                            f"{folder_name}/{label_key}={label}+{factor_key}={lev}+{other_factor}={other_level}-{vs.split('_', 1)[0]}+_vs_{vs.split('_', 1)[0]}-_NoGene.xlsx")
                                         else:
                                             dge.to_excel(
-f"{folder_name}/{label_key}={label}+{factor_key}={lev}+{other_factor}={other_level}-{vs.split('_', 1)[0]}+_vs_{vs.split('_', 1)[0]}-.xlsx")
+                                            f"{folder_name}/{label_key}={label}+{factor_key}={lev}+{other_factor}={other_level}-{vs.split('_', 1)[0]}+_vs_{vs.split('_', 1)[0]}-.xlsx")
                                     except:
                                         print(
-f"Couldn't calculated DGE for {vs} in the group : {label}--{factor_key}={lev}--{other_factor}={other_level}")
+                                        f"Couldn't calculated DGE for {vs} in the group : {label}--{factor_key}={lev}--{other_factor}={other_level}")
 
     shutil.make_archive(folder_name, 'zip', folder_name)
