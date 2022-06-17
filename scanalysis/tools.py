@@ -14,7 +14,7 @@ def _check_expression_mtx(adata):
     if m.size > 0:
         return False
 
-
+@jit()
 def _check_folder(folder_name):
     if not os.path.isdir(folder_name):
         os.mkdir(folder_name)
