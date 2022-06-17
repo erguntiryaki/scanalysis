@@ -118,8 +118,7 @@ def analyze_pct(data: DataFrame, label_keys: list = ('Broad', 'Detailed'),
                         contig(df=celldf,
                                group1=factor1,
                                group2=factor2,
-                               file_name=f'{folder_name}/detailed/{label_key}/{label_key}={label_key}\
-                               --{factor1}+{factor2}-{gen}.xlsx',
+                               file_name=f'{folder_name}/detailed/{label_key}/{label_key}--{factor1}+{factor2}-{gen}.xlsx',
                                gene=gen,
                                threshold=threshold
                                )
