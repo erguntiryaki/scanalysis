@@ -2,14 +2,14 @@ import pandas as pd
 import scanpy as sc
 from anndata import AnnData
 from pandas import DataFrame
-
+from numba import jit
 
 def _check_expression_mtx(adata):
     m = adata.X < 0
     if m.size > 0:
         return False
 
-
+@jit()
 def get_annotated(adata, genes):
     if _check_expression_mtx(adata):
         print('Expression matrix seems to be Z transformed!!!')
@@ -40,7 +40,7 @@ def get_annotated(adata, genes):
 
         return df, adata
 
-
+@jit()
 def pct_table(df, group, file_name='table.xlsx', gene='MS4A1', threshold=0):
     from collections import OrderedDict
     vals = OrderedDict({})
@@ -56,7 +56,7 @@ def pct_table(df, group, file_name='table.xlsx', gene='MS4A1', threshold=0):
     table.to_excel(file_name)
     return table
 
-
+@jit()
 def contig(df: DataFrame, group1, group2, file_name='table.xlsx', gene='MS4A1', threshold=0):
     from collections import OrderedDict
     grp = OrderedDict({})
@@ -64,9 +64,9 @@ def contig(df: DataFrame, group1, group2, file_name='table.xlsx', gene='MS4A1', 
         grp[i] = pct_table(df[df[group1] == i], group2, file_name=file_name, gene=gene, threshold=threshold)
     table = pd.concat(grp)
     table.to_excel(file_name)
-#    return table
+    return table
 
-
+@jit()
 def analyze_pct(data: DataFrame, label_keys: list, group_keys, genes: list, analyze_global: bool = True, threshold=0,
                 folder_name: str = 'pct'):
     from itertools import combinations
@@ -107,7 +107,7 @@ def analyze_pct(data: DataFrame, label_keys: list, group_keys, genes: list, anal
 
     shutil.make_archive(folder_name, 'zip', folder_name)
 
-
+@jit()
 def analyze_dge(adata: AnnData, label_keys: list, factors: list, versus: list, analyze_global: bool = True,
                 analyze_interaction: bool = True, folder_name: str = 'dge'):
     import os
