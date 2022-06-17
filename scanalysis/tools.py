@@ -126,18 +126,21 @@ def analyze_pct(data: DataFrame, label_keys: list = ('Broad', 'Detailed'),
     shutil.make_archive(folder_name, 'zip', folder_name)
 
 
-def analyze_dge(adata: AnnData, label_keys: list, factors: list, versus: list, analyze_global: bool = True,
+def analyze_dge(adata: AnnData, label_keys: list = ('BroadCellType', 'DetailedCellType'),
+                factor_keys: list = ('Diagnosis', 'Compartment'),
+                compare: list = ('GZMK_status', 'GZMB_status'),
+                analyze_global: bool = True,
                 analyze_interaction: bool = True, folder_name: str = 'dge'):
 
-    if not os.path.isdir(folder_name):
-        os.mkdir(folder_name)
+    _check_folder(folder_name)
 
     # Iterate over labels
     for label_key in label_keys:
         for label in adata.obs[label_key].unique():
             tempdata_label = adata[adata.obs[label_key] == label].copy()
+
             if analyze_global:
-                for vs in versus:
+                for vs in compare:
                     try:
                         sc.tl.rank_genes_groups(tempdata_label, vs, method='wilcoxon', use_raw=False)
                         dge = sc.get.rank_genes_groups_df(tempdata_label, 'positive', pval_cutoff=0.05).sort_values(
@@ -145,21 +148,19 @@ def analyze_dge(adata: AnnData, label_keys: list, factors: list, versus: list, a
                             ascending=False)
                         if dge.shape[0] < 2:
                             dge.to_excel(
-                                f"{folder_name}/global-{label_key}={label}-\
-{vs.split('_', 1)[0]}+_vs_{vs.split('_', 1)[0]}-NoGene.xlsx")
+f"{folder_name}/global-{label_key}={label}-{vs.split('_', 1)[0]}+_vs_{vs.split('_', 1)[0]}-NoGene.xlsx")
                         else:
                             dge.to_excel(
-                                f"{folder_name}/global-{label_key}={label}-\
-{vs.split('_', 1)[0]}+_vs_{vs.split('_', 1)[0]}-.xlsx")
+f"{folder_name}/global-{label_key}={label}-{vs.split('_', 1)[0]}+_vs_{vs.split('_', 1)[0]}-.xlsx")
 
                     except:
-                        print(f"Couldn't calculated global DGE for {vs}.")
+                        print(f"Couldn't calculated global DGE for {vs} in {label}.")
 
-            for factor in factors:
-                for lev in adata.obs[factor].unique():
-                    tempdata_level = tempdata_label[tempdata_label.obs[factor] == lev].copy()
+            for factor_key in factor_keys:
+                for lev in adata.obs[factor_key].unique():
+                    tempdata_level = tempdata_label[tempdata_label.obs[factor_key] == lev].copy()
 
-                    for vs in versus:
+                    for vs in compare:
                         try:
                             sc.tl.rank_genes_groups(tempdata_level, vs, method='wilcoxon', use_raw=False)
                             dge = sc.get.rank_genes_groups_df(tempdata_level, 'positive',
@@ -168,24 +169,22 @@ def analyze_dge(adata: AnnData, label_keys: list, factors: list, versus: list, a
 
                             if dge.shape[0] < 2:
                                 dge.to_excel(
-                                    f"{folder_name}/{label_key}={label}+{factor}={lev}-\
-{vs.split('_', 1)[0]}+_vs_{vs.split('_', 1)[0]}-_NoGene.xlsx")
+f"{folder_name}/{label_key}={label}+{factor_key}={lev}-{vs.split('_', 1)[0]}+_vs_{vs.split('_', 1)[0]}-_NoGene.xlsx")
                             else:
                                 dge.to_excel(
-                                    f"{folder_name}/{label_key}={label}+{factor}={lev}-\
-{vs.split('_', 1)[0]}+_vs_{vs.split('_', 1)[0]}-.xlsx")
+f"{folder_name}/{label_key}={label}+{factor_key}={lev}-{vs.split('_', 1)[0]}+_vs_{vs.split('_', 1)[0]}-.xlsx")
                         except:
                             print(
-                                f"Couldn't calculated DGE for {vs} among {label} of {label_key} in group {lev} of {factor}")
+f"Couldn't calculated DGE for {vs} in the group {label}--{factor_key}={lev}")
 
 
-                    if analyze_interaction:
-                        other_factors = [x for x in factors if x != factor]
+                    if len(factor_keys)>1 and  analyze_interaction:
+                        other_factors = [x for x in factor_keys if x != factor_key]
                         for other_factor in other_factors:
                             for other_level in tempdata_level.obs[other_factor].unique():
                                 tempdata_level_interact = tempdata_level[tempdata_level.obs[other_factor] == other_level, :].copy()
 
-                                for vs in versus:
+                                for vs in compare:
                                     try:
                                         sc.tl.rank_genes_groups(tempdata_level_interact, vs, method='wilcoxon', use_raw=False)
                                         dge = sc.get.rank_genes_groups_df(tempdata_level_interact, 'positive',
@@ -194,12 +193,12 @@ def analyze_dge(adata: AnnData, label_keys: list, factors: list, versus: list, a
 
                                         if dge.shape[0] < 2:
                                             dge.to_excel(
-                                                f"{folder_name}/{label_key}={label}+{factor}={lev}+{other_factor}={other_level}-{vs.split('_', 1)[0]}+_vs_{vs.split('_', 1)[0]}-_NoGene.xlsx")
+f"{folder_name}/{label_key}={label}+{factor_key}={lev}+{other_factor}={other_level}-{vs.split('_', 1)[0]}+_vs_{vs.split('_', 1)[0]}-_NoGene.xlsx")
                                         else:
                                             dge.to_excel(
-                                                f"{folder_name}/{label_key}={label}+{factor}={lev}+{other_factor}={other_level}-{vs.split('_', 1)[0]}+_vs_{vs.split('_', 1)[0]}-.xlsx")
+f"{folder_name}/{label_key}={label}+{factor_key}={lev}+{other_factor}={other_level}-{vs.split('_', 1)[0]}+_vs_{vs.split('_', 1)[0]}-.xlsx")
                                     except:
                                         print(
-                                            f"Couldn't calculated DGE for {vs} among {label} of {label_key} in group {lev} of {factor}")
+f"Couldn't calculated DGE for {vs} in the group : {label}--{factor_key}={lev}--{other_factor}={other_level}")
 
     shutil.make_archive(folder_name, 'zip', folder_name)
