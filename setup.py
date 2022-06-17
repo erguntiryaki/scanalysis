@@ -9,5 +9,5 @@ setup(
     author='ergun',
     author_email='erguntiryaki27@gmail.com',
     description='',
-    install_requires=['pandas', 'anndata', 'scanpy']
+    install_requires=['pandas', 'anndata', 'scanpy', 'numba']
 )

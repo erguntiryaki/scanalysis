@@ -4,10 +4,20 @@ from anndata import AnnData
 from pandas import DataFrame
 from numba import jit
 
+
 def _check_expression_mtx(adata):
     m = adata.X < 0
     if m.size > 0:
         return False
+
+
+@jit(forceobj=True)
+def _annot(x):
+    if x > 0:
+        return 'positive'
+    else:
+        return 'negative'
+
 
 @jit(forceobj=True)
 def get_annotated(adata, genes):
@@ -23,11 +33,11 @@ def get_annotated(adata, genes):
         # Annotate Positivity
         for gene in genes:
             if gene == 'MS4A1':
-                df['CD20_status'] = df.MS4A1.apply(lambda x: 'positive' if x > 0 else 'negative')
+                df['CD20_status'] = df.MS4A1.apply(_annot)
 
             else:
                 gname = f'{gene}_status'
-                df[gname] = df[gene].apply(lambda x: 'positive' if x > 0 else 'negative')
+                df[gname] = df[gene].apply(_annot)
 
         # Add annotation to adata
         for gene in genes:
@@ -39,6 +49,7 @@ def get_annotated(adata, genes):
                 adata.obs[gname] = df[gname].copy()
 
         return df, adata
+
 
 @jit(forceobj=True)
 def pct_table(df, group, file_name='table.xlsx', gene='MS4A1', threshold=0):
@@ -56,6 +67,7 @@ def pct_table(df, group, file_name='table.xlsx', gene='MS4A1', threshold=0):
     table.to_excel(file_name)
     return table
 
+
 @jit(forceobj=True)
 def contig(df: DataFrame, group1, group2, file_name='table.xlsx', gene='MS4A1', threshold=0):
     from collections import OrderedDict
@@ -65,6 +77,7 @@ def contig(df: DataFrame, group1, group2, file_name='table.xlsx', gene='MS4A1', 
     table = pd.concat(grp)
     table.to_excel(file_name)
     return table
+
 
 @jit(forceobj=True)
 def analyze_pct(data: DataFrame, label_keys: list, group_keys, genes: list, analyze_global: bool = True, threshold=0,
@@ -106,6 +119,7 @@ def analyze_pct(data: DataFrame, label_keys: list, group_keys, genes: list, anal
                            )
 
     shutil.make_archive(folder_name, 'zip', folder_name)
+
 
 @jit(forceobj=True)
 def analyze_dge(adata: AnnData, label_keys: list, factors: list, versus: list, analyze_global: bool = True,
