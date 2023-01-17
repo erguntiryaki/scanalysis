@@ -121,8 +121,7 @@ def analyze_pct(data: DataFrame,
                         contig(df=celldf,
                                group1=factor1,
                                group2=factor2,
-                               file_name=f'{folder_name}/detailed/{label_key}/contingency--{label_key}={label_level}\
-                               --{factor1}+{factor2}-{gen}.xlsx',
+                               file_name=f'{folder_name}/detailed/{label_key}/contingency--{label_key}={label_level}--{factor1}+{factor2}-{gen}.xlsx',
                                gene=gen,
                                threshold=threshold
                                )
@@ -153,12 +152,10 @@ def analyze_dge(adata: AnnData,
                             ascending=False)
                         if dge.shape[0] < 2:
                             dge.to_excel(
-                                f"{folder_name}/global-{label_key}={label}-{vs.split('_', 1)[0]}+\
-                                _vs_{vs.split('_', 1)[0]}-NoGene.xlsx")
+                                f"{folder_name}/global-{label_key}={label}-{vs.split('_', 1)[0]}+_vs_{vs.split('_', 1)[0]}-NoGene.xlsx")
                         else:
                             dge.to_excel(
-                                f"{folder_name}/global-{label_key}={label}-{vs.split('_', 1)[0]}+\
-                                _vs_{vs.split('_', 1)[0]}-.xlsx")
+                                f"{folder_name}/global-{label_key}={label}-{vs.split('_', 1)[0]}+_vs_{vs.split('_', 1)[0]}-.xlsx")
 
                     except:
                         print(f"Couldn't calculated global DGE for {vs} in {label}.")
@@ -180,8 +177,7 @@ def analyze_dge(adata: AnnData,
                                     -{vs.split('_', 1)[0]}+_vs_{vs.split('_', 1)[0]}-_NoGene.xlsx")
                             else:
                                 dge.to_excel(
-                                    f"{folder_name}/{label_key}={label}+{factor_key}={lev}-{vs.split('_', 1)[0]}+\
-                                    _vs_{vs.split('_', 1)[0]}-.xlsx")
+                                    f"{folder_name}/{label_key}={label}+{factor_key}={lev}-{vs.split('_', 1)[0]}+_vs_{vs.split('_', 1)[0]}-.xlsx")
                         except:
                             print(
                                 f"Couldn't calculated DGE for {vs} in the group {label}--{factor_key}={lev}")
@@ -204,15 +200,12 @@ def analyze_dge(adata: AnnData,
 
                                         if dge.shape[0] < 2:
                                             dge.to_excel(
-                                                f"{folder_name}/{label_key}={label}+{factor_key}={lev}+{other_factor}\
-                                                ={other_level}-{vs.split('_', 1)[0]}+_vs_{vs.split('_', 1)[0]}-_NoGene.xlsx")
+                                                f"{folder_name}/{label_key}={label}+{factor_key}={lev}+{other_factor}={other_level}-{vs.split('_', 1)[0]}+_vs_{vs.split('_', 1)[0]}-_NoGene.xlsx")
                                         else:
                                             dge.to_excel(
-                                                f"{folder_name}/{label_key}={label}+{factor_key}={lev}+{other_factor}\
-                                                ={other_level}-{vs.split('_', 1)[0]}+_vs_{vs.split('_', 1)[0]}-.xlsx")
+                                                f"{folder_name}/{label_key}={label}+{factor_key}={lev}+{other_factor}={other_level}-{vs.split('_', 1)[0]}+_vs_{vs.split('_', 1)[0]}-.xlsx")
                                     except:
                                         print(
-                                            f"Couldn't calculated DGE for {vs} in the group : {label}--{factor_key}\
-                                            ={lev}--{other_factor}={other_level}")
+                                            f"Couldn't calculated DGE for {vs} in the group : {label}--{factor_key}={lev}--{other_factor}={other_level}")
 
     shutil.make_archive(folder_name, 'zip', folder_name)
