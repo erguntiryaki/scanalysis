@@ -146,7 +146,7 @@ def analyze_dge(adata: AnnData,
             if analyze_global:
                 for vs in compare:
                     try:
-                        sc.tl.rank_genes_groups(tempdata_label, vs, method='wilcoxon', use_raw=False)
+                        sc.tl.rank_genes_groups(tempdata_label, vs, method='wilcoxon', use_raw=False, pts=True)
                         dge = sc.get.rank_genes_groups_df(tempdata_label, 'positive', pval_cutoff=0.05).sort_values(
                             'logfoldchanges',
                             ascending=False)
@@ -166,7 +166,7 @@ def analyze_dge(adata: AnnData,
 
                     for vs in compare:
                         try:
-                            sc.tl.rank_genes_groups(tempdata_level, vs, method='wilcoxon', use_raw=False)
+                            sc.tl.rank_genes_groups(tempdata_level, vs, method='wilcoxon', use_raw=False, pts=True)
                             dge = sc.get.rank_genes_groups_df(tempdata_level, 'positive',
                                                               pval_cutoff=0.05).sort_values('logfoldchanges',
                                                                                             ascending=False)
@@ -192,7 +192,7 @@ def analyze_dge(adata: AnnData,
                                 for vs in compare:
                                     try:
                                         sc.tl.rank_genes_groups(tempdata_level_interact, vs, method='wilcoxon',
-                                                                use_raw=False)
+                                                                use_raw=False, pts=True)
                                         dge = sc.get.rank_genes_groups_df(tempdata_level_interact, 'positive',
                                                                           pval_cutoff=0.05).sort_values(
                                             'logfoldchanges',
